@@ -114,7 +114,7 @@
     <li>Step 2 — Containerization &amp; Local Testing <span class="status done">DONE</span></li>
     <li>Step 3 — Push Images to Amazon ECR <span class="status done">DONE</span></li>
     <li>Step 4 — Continuous Integration with Jenkins <span class="status done">DONE</span></li>
-    <li>Step 5 — Kubernetes Deployment on EKS (Helm) <span class="status doc">DOCUMENTED</span></li>
+    <li>Step 5 — Kubernetes Deployment on EKS (Helm) <span class="status done">DONE</span></li>
     <li>Step 6 — Monitoring &amp; Logging <span class="status doc">DOCUMENTED</span></li>
     <li>Troubleshooting Log</li>
     <li>Conclusion &amp; Cleanup</li>
@@ -324,7 +324,7 @@ docker push 113892881067.dkr.ecr.ap-south-1.amazonaws.com/mern-frontend:latest</
 
 <!-- 7. EKS -->
 <section class="phase">
-  <div class="phase-header"><h2>7. Step 5 — Kubernetes Deployment on EKS (Helm) <span class="status doc">PROCEDURE</span></h2><p class="phase-meta">Managed Kubernetes with a Helm chart + autoscaling.</p></div>
+  <div class="phase-header"><h2>7. Step 5 — Kubernetes Deployment on EKS (Helm) <span class="status done">DONE</span></h2><p class="phase-meta">Managed Kubernetes with a Helm chart + autoscaling.</p></div>
 
   <h3>7.1 Create the EKS cluster</h3>
   <pre><code>eksctl create cluster \
@@ -360,6 +360,47 @@ kubectl get hpa            # autoscalers for hello &amp; profile</code></pre>
 
   <h3>7.4 Autoscaling (HorizontalPodAutoscaler)</h3>
   <pre><code>minReplicas: 2   maxReplicas: 5   targetCPUUtilizationPercentage: 70</code></pre>
+
+  <h3>7.5 Live deployment results</h3>
+  <p>The cluster <code>mern-eks</code> (2 &times; <code>t3.small</code> nodes) was created with eksctl and the
+  chart deployed with Helm. All seven pods reached <code>Running</code>, the frontend was exposed through an
+  AWS Load Balancer (returned HTTP 200), internal service discovery resolved, and the HPAs began reporting CPU.</p>
+  <pre><code>$ kubectl get pods
+NAME                               READY   STATUS    RESTARTS   AGE
+frontend-xxxx (x2)                 1/1     Running   0          38s
+hello-service-xxxx (x2)            1/1     Running   0          38s
+profile-service-xxxx (x2)          1/1     Running   0          38s
+mongo-xxxx                         1/1     Running   0          38s
+
+$ kubectl get svc
+frontend        LoadBalancer   ...   a...ap-south-1.elb.amazonaws.com   80:30541/TCP
+hello-service   ClusterIP      ...   3001/TCP
+profile-service ClusterIP      ...   3002/TCP
+
+$ kubectl get hpa
+hello-service     Deployment/hello-service     cpu: 2%/70%   2   5   2
+profile-service   Deployment/profile-service   cpu: 2%/70%   2   5   2
+
+$ curl http://&lt;elb-url&gt;                 -> HTTP 200 (frontend)
+$ kubectl exec deploy/frontend -- wget -qO- http://hello-service:3001/
+{"msg":"Hello World"}   # internal service discovery</code></pre>
+
+  <figure class="shot">
+    <img src="docs/screenshots/05-eks-pods.png" alt="kubectl get pods on EKS" />
+    <figcaption>Figure 7.1 &mdash; All seven pods Running on EKS (<code>kubectl get pods</code>).</figcaption>
+  </figure>
+  <figure class="shot">
+    <img src="docs/screenshots/06-eks-services-hpa.png" alt="kubectl get svc and hpa on EKS" />
+    <figcaption>Figure 7.2 &mdash; Services (frontend LoadBalancer) and HorizontalPodAutoscalers.</figcaption>
+  </figure>
+  <figure class="shot">
+    <img src="docs/screenshots/07-loadbalancer-browser.png" alt="frontend served through the AWS load balancer" />
+    <figcaption>Figure 7.3 &mdash; The frontend accessed over the internet through the AWS Load Balancer URL.</figcaption>
+  </figure>
+  <figure class="shot">
+    <img src="docs/screenshots/08-eks-console.png" alt="Amazon EKS console showing the mern-eks cluster" />
+    <figcaption>Figure 7.4 &mdash; The <code>mern-eks</code> cluster Active in the Amazon EKS console.</figcaption>
+  </figure>
 </section>
 
 <!-- 8. MONITORING -->
