@@ -115,8 +115,7 @@
     <li>Step 3 — Push Images to Amazon ECR <span class="status done">DONE</span></li>
     <li>Step 4 — Continuous Integration with Jenkins <span class="status done">DONE</span></li>
     <li>Step 5 — Kubernetes Deployment on EKS (Helm) <span class="status done">DONE</span></li>
-    <li>Step 6 — Monitoring &amp; Logging <span class="status doc">DOCUMENTED</span></li>
-    <li>Troubleshooting Log</li>
+    <li>Step 6 — Monitoring &amp; Logging <span class="status doc">DOCUMENTED</span></li>    <li>Bonus (Step 9) &mdash; ChatOps: SNS &rarr; Lambda &rarr; Telegram <span class="status done">DONE</span></li>    <li>Troubleshooting Log</li>
     <li>Conclusion &amp; Cleanup</li>
   </ol>
 </section>
@@ -423,9 +422,51 @@ kubectl apply -f https://raw.githubusercontent.com/aws-samples/amazon-cloudwatch
   Log Groups <code>/aws/containerinsights/mern-eks/*</code> for centralized logging.</div>
 </section>
 
-<!-- 9. TROUBLESHOOTING -->
+<!-- 9. CHATOPS -->
 <section class="phase">
-  <div class="phase-header"><h2>9. Troubleshooting Log</h2><p class="phase-meta">Issues hit and how they were solved.</p></div>
+  <div class="phase-header"><h2>9. Bonus (Step 9) &mdash; ChatOps Integration <span class="status done">DONE</span></h2><p class="phase-meta">Real-time alerts: SNS &rarr; Lambda &rarr; Telegram.</p></div>
+  <p>An event-driven ChatOps pipeline delivers alerts to a Telegram chat. An SNS topic fans a published
+  message out to a Lambda function, which forwards the subject and body to the Telegram Bot API.</p>
+  <pre><code># 1) SNS topic
+aws sns create-topic --name mern-chatops-alerts
+
+# 2) Lambda execution role (basic execution) + Python function (chatops/lambda_function.py)
+aws iam create-role --role-name mern-chatops-lambda-role --assume-role-policy-document file://lambda-trust-policy.json
+aws iam attach-role-policy --role-name mern-chatops-lambda-role \
+  --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+aws lambda create-function --function-name mern-chatops-telegram --runtime python3.12 \
+  --handler lambda_function.lambda_handler --role &lt;role-arn&gt; --zip-file fileb://function.zip \
+  --environment "Variables={TELEGRAM_TOKEN=***,TELEGRAM_CHAT_ID=***}"
+
+# 3) Wire SNS -> Lambda
+aws lambda add-permission --function-name mern-chatops-telegram --statement-id sns-invoke \
+  --action lambda:InvokeFunction --principal sns.amazonaws.com --source-arn &lt;topic-arn&gt;
+aws sns subscribe --topic-arn &lt;topic-arn&gt; --protocol lambda --notification-endpoint &lt;lambda-arn&gt;
+
+# 4) Publish a test alert
+aws sns publish --topic-arn &lt;topic-arn&gt; --subject "MERN Deployment Alert" \
+  --message "EKS deployment completed successfully..."</code></pre>
+  <p>The Lambda handler (secrets read from environment variables, never hard-coded):</p>
+  <pre><code>def lambda_handler(event, context):
+    for record in event.get("Records", []):
+        sns = record["Sns"]
+        text = f"🔔 {sns.get('Subject','AWS Alert')}\n\n{sns['Message']}"
+        urllib.request.urlopen(urllib.request.Request(
+            f"https://api.telegram.org/bot{TOKEN}/sendMessage",
+            data=json.dumps({"chat_id": CHAT_ID, "text": text}).encode(),
+            headers={"Content-Type": "application/json"}))</code></pre>
+  <div class="callout success">The published SNS message was delivered to Telegram end-to-end; the Lambda
+  CloudWatch log shows a clean <code>START/END/REPORT</code> with no errors.</div>
+
+  <figure class="shot">
+    <img src="docs/screenshots/09-telegram-alert.png" alt="Telegram message received from the ChatOps pipeline" />
+    <figcaption>Figure 9.1 &mdash; The alert delivered to Telegram via SNS &rarr; Lambda &rarr; Telegram Bot API.</figcaption>
+  </figure>
+</section>
+
+<!-- 10. TROUBLESHOOTING -->
+<section class="phase">
+  <div class="phase-header"><h2>10. Troubleshooting Log</h2><p class="phase-meta">Issues hit and how they were solved.</p></div>
   <table>
     <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
     <tbody>
@@ -440,7 +481,7 @@ kubectl apply -f https://raw.githubusercontent.com/aws-samples/amazon-cloudwatch
 
 <!-- 10. CONCLUSION -->
 <section class="phase">
-  <div class="phase-header"><h2>10. Conclusion &amp; Cleanup</h2></div>
+  <div class="phase-header"><h2>11. Conclusion &amp; Cleanup</h2></div>
   <p>The MERN microservices application was containerized, verified end-to-end locally with Docker Compose
   (including a MongoDB write/read), and its three images were published to Amazon ECR. A Jenkins pipeline and a
   Helm chart (with autoscaling) provide the CI and Kubernetes deployment path to Amazon EKS, with Prometheus/
