@@ -16,4 +16,7 @@ Contents:
 Images pushed to Amazon ECR (ap-south-1):
 - mern-hello, mern-profile, mern-frontend
 
+Deployed live to Amazon EKS (mern-eks) via Helm: 7 pods Running, frontend LoadBalancer, HPA autoscaling.
+Bonus ChatOps: SNS -> Lambda -> Telegram real-time alert (working). Cluster deleted after validation.
+
 Date of Submission: 09-08-2026
