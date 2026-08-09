@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.frontend.name }}
+  labels: { app: {{ .Values.frontend.name }} }
+spec:
+  replicas: {{ .Values.frontend.replicas }}
+  selector:
+    matchLabels: { app: {{ .Values.frontend.name }} }
+  template:
+    metadata:
+      labels: { app: {{ .Values.frontend.name }} }
+    spec:
+      containers:
+        - name: {{ .Values.frontend.name }}
+          image: "{{ .Values.imageRegistry }}/{{ .Values.frontend.repo }}:{{ .Values.tag }}"
+          imagePullPolicy: {{ .Values.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.frontend.port }}
+          resources:
+            requests: { cpu: "50m", memory: "64Mi" }
+            limits:   { cpu: "250m", memory: "256Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.frontend.name }}
+  labels: { app: {{ .Values.frontend.name }} }
+spec:
+  type: {{ .Values.frontend.serviceType }}
+  selector: { app: {{ .Values.frontend.name }} }
+  ports:
+    - port: 80
+      targetPort: {{ .Values.frontend.port }}

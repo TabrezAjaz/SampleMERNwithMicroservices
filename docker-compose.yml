@@ -1,0 +1,48 @@
+# Local orchestration of the MERN microservices for testing before ECR/EKS.
+services:
+  mongo:
+    image: mongo:6
+    container_name: mern-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks: [mern-net]
+
+  hello-service:
+    build: ./backend/helloService
+    container_name: hello-service
+    environment:
+      - PORT=3001
+    ports:
+      - "3001:3001"
+    networks: [mern-net]
+    restart: unless-stopped
+
+  profile-service:
+    build: ./backend/profileService
+    container_name: profile-service
+    environment:
+      - PORT=3002
+      - MONGO_URL=mongodb://mongo:27017/profileDB
+    depends_on: [mongo]
+    ports:
+      - "3002:3002"
+    networks: [mern-net]
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: mern-frontend
+    depends_on: [hello-service, profile-service]
+    ports:
+      - "3000:3000"
+    networks: [mern-net]
+    restart: unless-stopped
+
+networks:
+  mern-net:
+    driver: bridge
+
+volumes:
+  mongo-data:

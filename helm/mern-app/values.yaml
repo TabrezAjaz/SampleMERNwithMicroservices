@@ -1,0 +1,37 @@
+# Set imageRegistry to your ECR registry, e.g.
+#   123456789012.dkr.ecr.ap-south-1.amazonaws.com
+imageRegistry: ""
+tag: latest
+pullPolicy: IfNotPresent
+
+# MongoDB: deploy an in-cluster instance (default) OR point to Atlas.
+mongo:
+  inCluster: true
+  # If inCluster is false, set your Atlas connection string here (or via --set):
+  url: "mongodb://mongo:27017/profileDB"
+
+hello:
+  name: hello-service
+  repo: mern-hello
+  port: 3001
+  replicas: 2
+
+profile:
+  name: profile-service
+  repo: mern-profile
+  port: 3002
+  replicas: 2
+
+frontend:
+  name: frontend
+  repo: mern-frontend
+  port: 3000
+  replicas: 2
+  serviceType: LoadBalancer
+
+# Horizontal Pod Autoscaler (scaling requirement)
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70

@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.profile.name }}
+  labels: { app: {{ .Values.profile.name }} }
+spec:
+  replicas: {{ .Values.profile.replicas }}
+  selector:
+    matchLabels: { app: {{ .Values.profile.name }} }
+  template:
+    metadata:
+      labels: { app: {{ .Values.profile.name }} }
+    spec:
+      containers:
+        - name: {{ .Values.profile.name }}
+          image: "{{ .Values.imageRegistry }}/{{ .Values.profile.repo }}:{{ .Values.tag }}"
+          imagePullPolicy: {{ .Values.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.profile.port }}
+          env:
+            - name: PORT
+              value: "{{ .Values.profile.port }}"
+            - name: MONGO_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.profile.name }}-secret
+                  key: mongoUrl
+          resources:
+            requests: { cpu: "50m", memory: "64Mi" }
+            limits:   { cpu: "250m", memory: "256Mi" }
+          readinessProbe:
+            httpGet: { path: /health, port: {{ .Values.profile.port }} }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /health, port: {{ .Values.profile.port }} }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Values.profile.name }}-secret
+type: Opaque
+stringData:
+  mongoUrl: "{{ .Values.mongo.url }}"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.profile.name }}
+  labels: { app: {{ .Values.profile.name }} }
+spec:
+  type: ClusterIP
+  selector: { app: {{ .Values.profile.name }} }
+  ports:
+    - port: {{ .Values.profile.port }}
+      targetPort: {{ .Values.profile.port }}
+{{- if .Values.autoscaling.enabled }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ .Values.profile.name }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ .Values.profile.name }}
+  minReplicas: {{ .Values.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.autoscaling.targetCPUUtilizationPercentage }}
+{{- end }}
