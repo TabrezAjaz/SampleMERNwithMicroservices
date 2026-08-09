@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MERN Microservices — Orchestration &amp; Scaling Report</title>
+<style>
+  :root {
+    --primary:#0f2540; --primary-mid:#1a3a6e; --primary-soft:#2c4d80; --primary-light:#e8eef7;
+    --accent:#2496ed; --accent2:#326ce5; --text:#1f2937; --muted:#6b7280; --border:#d1d5db;
+    --code-bg:#f5f5f5; --success:#16a34a; --warn:#d97706; --danger:#dc2626;
+  }
+  @page { size: A4 portrait; margin: 1.4cm 1.3cm; }
+  * { box-sizing:border-box; }
+  html { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body { font-family:"Segoe UI", system-ui, -apple-system, Arial, sans-serif; color:var(--text); line-height:1.55; margin:0; background:#fff; font-size:11.5pt; }
+  h1,h2,h3,h4 { font-family:Georgia,"Times New Roman",serif; color:var(--primary); margin-top:1.2em; }
+  h1 { font-size:2.2em; border-bottom:3px solid var(--primary); padding-bottom:.3em; }
+  h2 { font-size:1.55em; border-bottom:1px solid var(--border); padding-bottom:.25em; margin-top:2em; }
+  h3 { font-size:1.2em; color:#2c4d80; margin-top:1.5em; }
+  p { margin:.6em 0; text-align:justify; }
+  a { color:var(--primary); text-decoration:none; }
+  ul,ol { padding-left:1.4em; } li { margin:.25em 0; }
+  code { background:var(--code-bg); padding:1px 5px; border-radius:3px; font-family:"Consolas","Courier New",monospace; font-size:.92em; color:#b91c1c; }
+  pre { background:#1e293b; color:#e2e8f0; padding:12px 16px; border-radius:6px; font-family:"Consolas","Courier New",monospace; font-size:9.3pt; line-height:1.45; page-break-inside:avoid; white-space:pre-wrap; overflow-wrap:anywhere; word-break:break-word; }
+  pre code { background:transparent; color:inherit; padding:0; }
+  table { width:100%; border-collapse:collapse; margin:1em 0; font-size:.95em; page-break-inside:avoid; }
+  th,td { border:1px solid var(--border); padding:8px 10px; text-align:left; vertical-align:top; }
+  th { background:var(--primary-light); color:var(--primary); font-weight:600; }
+  tr:nth-child(even) td { background:#fafbfd; }
+
+  .cover { min-height:25cm; display:flex; flex-direction:column; page-break-after:always; }
+  .cover-frame { flex:1; display:flex; flex-direction:column; align-items:center; text-align:center; padding:3.5em 2em 2.5em;
+    background:radial-gradient(ellipse at top right, rgba(50,108,229,.18), transparent 55%), radial-gradient(ellipse at bottom left, rgba(44,77,128,.35), transparent 60%), linear-gradient(140deg,#0f2540 0%,#1a3a6e 55%,#2c4d80 100%);
+    color:#fff; border-radius:14px; position:relative; overflow:hidden; box-shadow:0 10px 40px rgba(0,0,0,.25); }
+  .cover-frame::before,.cover-frame::after { content:''; position:absolute; left:0; right:0; height:7px; background:linear-gradient(90deg,#2496ed,#326ce5 50%,#2496ed); }
+  .cover-frame::before { top:0; } .cover-frame::after { bottom:0; }
+  .cover .crest { width:78px; height:78px; border-radius:50%; background:linear-gradient(135deg,#2496ed,#326ce5); display:flex; align-items:center; justify-content:center; font-size:2.3em; margin:.4em auto 1.4em; box-shadow:0 6px 18px rgba(0,0,0,.35); color:#fff; }
+  .cover .eyebrow { font-size:.85em; letter-spacing:.4em; text-transform:uppercase; color:#7ea9f0; margin:0 0 .4em; font-weight:600; }
+  .cover h1 { font-family:Georgia,serif; font-size:2.7em; color:#fff; border:none; margin:.1em 0; text-shadow:0 2px 6px rgba(0,0,0,.35); line-height:1.08; }
+  .cover .subtitle { font-size:1.1em; color:#e8eef7; letter-spacing:.2em; text-transform:uppercase; font-weight:300; margin:.6em 0 0; }
+  .cover .divider { width:90px; height:3px; background:linear-gradient(90deg,transparent,#7ea9f0,transparent); margin:1.6em auto; border:none; }
+  .cover .tagline { color:#cbd5e1; font-size:.98em; max-width:14cm; margin:.4em auto 1.6em; }
+  .cover .meta-box { margin:1.4em auto 0; padding:1.6em 2em; border:1px solid rgba(255,255,255,.18); border-radius:10px; background:rgba(255,255,255,.06); max-width:17cm; width:100%; text-align:left; }
+  .cover .meta-box p { margin:0; padding:.55em 0; text-align:left; font-size:1em; color:#f1f5f9; border-bottom:1px dashed rgba(255,255,255,.14); display:flex; gap:1em; }
+  .cover .meta-box p:last-child { border-bottom:none; }
+  .cover .meta-box strong { color:#7ea9f0; font-weight:600; min-width:5.5cm; letter-spacing:.03em; font-size:.9em; text-transform:uppercase; }
+  .cover .seal { margin-top:auto; padding-top:1.6em; color:#cbd5e1; font-size:.82em; letter-spacing:.1em; text-transform:uppercase; }
+  .cover .seal strong { color:#7ea9f0; }
+
+  .toc { page-break-after:always; }
+  .toc ol { list-style:none; padding-left:0; counter-reset:tocitem; }
+  .toc ol li { counter-increment:tocitem; padding:5px 0; border-bottom:1px dotted #cbd5e1; }
+  .toc ol li::before { content:counter(tocitem) ".  "; color:var(--accent); font-weight:700; font-family:Georgia,serif; }
+
+  .phase { page-break-before:always; }
+  .phase-header { background:linear-gradient(135deg,var(--primary) 0%,var(--primary-mid) 60%,var(--primary-soft) 100%); color:#fff; padding:1em 1.4em; border-radius:8px; margin-bottom:1.5em; position:relative; overflow:hidden; }
+  .phase-header::before { content:''; position:absolute; left:0; top:0; bottom:0; width:5px; background:var(--accent); }
+  .phase-header h2 { color:#fff; border:none; margin:0; padding-left:.6em; font-size:1.5em; }
+  .phase-header .phase-meta { margin:.4em 0 0; padding-left:.9em; font-size:.9em; opacity:.88; font-style:italic; }
+  .objective { background:var(--primary-light); border-left:4px solid var(--primary); padding:.8em 1.2em; margin:1em 0 1.5em; border-radius:0 4px 4px 0; }
+  .objective h4 { margin:0 0 .4em; color:var(--primary); }
+  .status { display:inline-block; font-size:.7em; padding:2px 9px; border-radius:12px; font-weight:600; vertical-align:middle; margin-left:6px; }
+  .status.done { background:#dcfce7; color:var(--success); }
+  .status.doc { background:#e0e7ff; color:#4338ca; }
+
+  figure.shot { margin:1.2em 0; page-break-inside:avoid; }
+  figure.shot img { max-width:100%; height:auto; display:block; margin:0 auto; border:1px solid var(--border); border-radius:6px; box-shadow:0 4px 14px rgba(15,37,64,.12); }
+  figure.shot figcaption { text-align:center; color:var(--muted); font-size:.88em; margin-top:.5em; font-style:italic; }
+
+  .callout { border-left:4px solid; padding:.7em 1em; margin:1em 0; border-radius:0 4px 4px 0; background:#f9fafb; }
+  .callout.info { border-color:var(--primary); background:var(--primary-light); }
+  .callout.warn { border-color:var(--warn); background:#fef3c7; }
+  .callout.success { border-color:var(--success); background:#dcfce7; }
+  .doc-footer { margin-top:3em; padding-top:1em; border-top:1px solid var(--border); color:var(--muted); font-size:.85em; text-align:center; }
+
+  @media print { body { font-size:10.5pt; } section.phase { break-before:page; page-break-before:always; } .cover { break-before:auto; } h2,h3 { break-after:avoid; } pre,table,figure.shot { break-inside:avoid; } }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<section class="cover">
+  <div class="cover-frame">
+    <div class="crest">&#9762;</div>
+    <p class="eyebrow">Docker · ECR · Jenkins · EKS · Helm</p>
+    <h1>MERN Microservices<br/>Orchestration &amp; Scaling</h1>
+    <p class="subtitle">Graded Project Report</p>
+    <hr class="divider" />
+    <p class="tagline">
+      Containerizing a MERN microservices application (helloService, profileService, React frontend),
+      pushing images to Amazon ECR, wiring CI with Jenkins, and deploying to Kubernetes (EKS) with a
+      Helm chart that includes horizontal pod autoscaling.
+    </p>
+    <div class="meta-box">
+      <p><strong>Submitted&nbsp;by</strong> <span>Tabrez Ajaz</span></p>
+      <p><strong>Project</strong> <span>Orchestration and Scaling (MERN Microservices)</span></p>
+      <p><strong>Services</strong> <span>helloService (3001), profileService (3002), frontend (3000), MongoDB</span></p>
+      <p><strong>AWS Region</strong> <span>ap-south-1 (Mumbai)</span></p>
+      <p><strong>Repository</strong> <span><a href="https://github.com/TabrezAjaz/SampleMERNwithMicroservices">github.com/TabrezAjaz/SampleMERNwithMicroservices</a></span></p>
+      <p><strong>Date</strong> <span>09 August 2026</span></p>
+    </div>
+    <p class="seal">MERN · Kubernetes · Helm &nbsp;·&nbsp; <strong>Orchestration Report</strong> &nbsp;·&nbsp; 2026</p>
+  </div>
+</section>
+
+<!-- TOC -->
+<section class="toc">
+  <h2>Table of Contents</h2>
+  <ol>
+    <li>Overview &amp; Objectives</li>
+    <li>System Architecture</li>
+    <li>Step 1 — Version Control (Fork) <span class="status done">DONE</span></li>
+    <li>Step 2 — Containerization &amp; Local Testing <span class="status done">DONE</span></li>
+    <li>Step 3 — Push Images to Amazon ECR <span class="status done">DONE</span></li>
+    <li>Step 4 — Continuous Integration with Jenkins <span class="status done">DONE</span></li>
+    <li>Step 5 — Kubernetes Deployment on EKS (Helm) <span class="status doc">DOCUMENTED</span></li>
+    <li>Step 6 — Monitoring &amp; Logging <span class="status doc">DOCUMENTED</span></li>
+    <li>Troubleshooting Log</li>
+    <li>Conclusion &amp; Cleanup</li>
+  </ol>
+</section>
+
+<!-- 1. OVERVIEW -->
+<section class="phase">
+  <div class="phase-header"><h2>1. Overview &amp; Objectives</h2><p class="phase-meta">What is being built and why.</p></div>
+  <h3>1.1 Objective</h3>
+  <p>Take a MERN microservices application, containerize every service, publish the images to a private
+  Amazon ECR registry, build a CI pipeline in Jenkins, and deploy the whole system to a managed
+  Kubernetes cluster (Amazon EKS) using a Helm chart with autoscaling.</p>
+  <h3>1.2 Services</h3>
+  <table>
+    <thead><tr><th>Service</th><th>Port</th><th>Tech</th><th>Endpoints</th></tr></thead>
+    <tbody>
+      <tr><td><code>helloService</code></td><td>3001</td><td>Node/Express</td><td><code>/</code>, <code>/health</code></td></tr>
+      <tr><td><code>profileService</code></td><td>3002</td><td>Node/Express + MongoDB</td><td><code>/health</code>, <code>/addUser</code>, <code>/fetchUser</code></td></tr>
+      <tr><td><code>frontend</code></td><td>3000</td><td>React (CRA)</td><td>Dashboard consuming both backends</td></tr>
+      <tr><td><code>mongo</code></td><td>27017</td><td>MongoDB 6</td><td>Datastore for profileService</td></tr>
+    </tbody>
+  </table>
+  <h3>1.3 Toolchain</h3>
+  <table>
+    <thead><tr><th>Concern</th><th>Tool</th></tr></thead>
+    <tbody>
+      <tr><td>Containerization</td><td>Docker, Docker Compose</td></tr>
+      <tr><td>Image registry</td><td>Amazon ECR</td></tr>
+      <tr><td>CI</td><td>Jenkins (declarative pipeline)</td></tr>
+      <tr><td>Orchestration</td><td>Amazon EKS (Kubernetes)</td></tr>
+      <tr><td>Packaging &amp; deploy</td><td>Helm chart + HPA autoscaling</td></tr>
+      <tr><td>Region</td><td>ap-south-1 (Mumbai)</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 2. ARCHITECTURE -->
+<section class="phase">
+  <div class="phase-header"><h2>2. System Architecture</h2><p class="phase-meta">From source to a running EKS deployment.</p></div>
+  <pre><code>  Developer ──git push──▶ GitHub (fork)
+                              │
+                              ▼
+                        Jenkins CI
+        ┌───────── build 3 images ─────────┐
+        ▼                                   ▼
+  docker build            aws ecr get-login-password | docker login
+        │                                   │
+        ▼                                   ▼
+   Amazon ECR  ◀── docker push ── mern-hello / mern-profile / mern-frontend
+        │
+        ▼  helm upgrade --install
+   Amazon EKS (Kubernetes)
+   ┌───────────────┬─────────────────┬────────────────┐
+   │ frontend (LB) │ hello (ClusterIP)│ profile(ClusterIP)
+   │  :3000        │  :3001           │  :3002
+   └───────────────┴─────────────────┴──────┬─────────┘
+                                            ▼
+                                      MongoDB (in-cluster / Atlas)
+   + HorizontalPodAutoscaler on hello &amp; profile (CPU 70%, 2→5 pods)</code></pre>
+  <div class="callout info"><strong>Scaling:</strong> the Helm chart ships a <code>HorizontalPodAutoscaler</code> for the
+  backend services (min 2, max 5 replicas, target 70% CPU), satisfying the project's scaling requirement.</div>
+</section>
+
+<!-- 3. FORK -->
+<section class="phase">
+  <div class="phase-header"><h2>3. Step 1 — Version Control (Fork) <span class="status done">DONE</span></h2><p class="phase-meta">Fork and sync.</p></div>
+  <p>The upstream repository was forked into the author's GitHub account and cloned locally. The fork is
+  kept in sync with upstream via a second <code>upstream</code> remote.</p>
+  <pre><code># Fork: github.com/TabrezAjaz/SampleMERNwithMicroservices
+git clone https://github.com/TabrezAjaz/SampleMERNwithMicroservices.git
+git remote add upstream https://github.com/UnpredictablePrashant/SampleMERNwithMicroservices.git
+
+# Sync when upstream changes:
+git fetch upstream && git merge upstream/main</code></pre>
+</section>
+
+<!-- 4. CONTAINERIZATION -->
+<section class="phase">
+  <div class="phase-header"><h2>4. Step 2 — Containerization &amp; Local Testing <span class="status done">DONE</span></h2><p class="phase-meta">Dockerfiles + docker-compose, verified locally.</p></div>
+
+  <h3>4.1 Backend Dockerfiles (hello :3001 / profile :3002)</h3>
+  <pre><code>FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm install --production
+COPY . .
+EXPOSE 3001            # 3002 for profileService
+CMD ["node", "index.js"]</code></pre>
+
+  <h3>4.2 Frontend Dockerfile (multi-stage, :3000)</h3>
+  <pre><code>FROM node:18-alpine AS build
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+ENV DISABLE_ESLINT_PLUGIN=true
+ENV CI=false
+RUN npm run build
+
+FROM node:18-alpine
+WORKDIR /app
+RUN npm install -g serve
+COPY --from=build /app/build ./build
+EXPOSE 3000
+CMD ["serve", "-s", "build", "-l", "3000"]</code></pre>
+
+  <h3>4.3 docker-compose.yml (local orchestration)</h3>
+  <pre><code>services:
+  mongo:            { image: mongo:6, ports: ["27017:27017"] }
+  hello-service:    { build: ./backend/helloService,   ports: ["3001:3001"], environment: [PORT=3001] }
+  profile-service:  { build: ./backend/profileService, ports: ["3002:3002"],
+                      environment: [PORT=3002, MONGO_URL=mongodb://mongo:27017/profileDB] }
+  frontend:         { build: ./frontend, ports: ["3000:3000"] }</code></pre>
+
+  <h3>4.4 Build &amp; run</h3>
+  <pre><code>docker compose up --build -d
+docker compose ps</code></pre>
+
+  <figure class="shot">
+    <img src="docs/screenshots/01-docker-compose-ps.png" alt="docker compose ps showing four containers up" />
+    <figcaption>Figure 4.1 — All four containers running (<code>docker compose ps</code>).</figcaption>
+  </figure>
+
+  <h3>4.5 Endpoint verification</h3>
+  <pre><code>$ curl http://localhost:3001/            -> {"msg":"Hello World"}
+$ curl http://localhost:3001/health      -> {"status":"OK"}
+$ curl http://localhost:3002/health      -> {"status":"OK"}
+$ curl -X POST http://localhost:3002/addUser -d '{"name":"Tabrez Ajaz","age":25}'
+                                         -> {"msg":"User Added Successfully"}
+$ curl http://localhost:3002/fetchUser
+[{"_id":"...","name":"Tabrez Ajaz","age":25,"createdAt":"2026-08-09T..."},
+ {"_id":"...","name":"Farheen","age":23,"createdAt":"2026-08-09T..."}]</code></pre>
+
+  <figure class="shot">
+    <img src="docs/screenshots/02-app-endpoints.png" alt="curl outputs for the endpoints" />
+    <figcaption>Figure 4.2 — Service endpoints working, including a MongoDB write and read via profileService.</figcaption>
+  </figure>
+
+  <figure class="shot">
+    <img src="docs/screenshots/03-frontend-browser.png" alt="frontend dashboard at localhost:3000" />
+    <figcaption>Figure 4.3 — React frontend served at <code>http://localhost:3000</code>.</figcaption>
+  </figure>
+</section>
+
+<!-- 5. ECR -->
+<section class="phase">
+  <div class="phase-header"><h2>5. Step 3 — Push Images to Amazon ECR <span class="status done">DONE</span></h2><p class="phase-meta">Private registry in ap-south-1.</p></div>
+  <p>AWS CLI was configured with an IAM Identity Center (SSO) profile, then the three images were built and
+  pushed to Amazon ECR. Repositories are created on demand.</p>
+  <pre><code># Verify identity
+aws sts get-caller-identity        # Account 113892881067, ap-south-1
+
+# Create repos, log in, build &amp; push (scripts/build-and-push-ecr.ps1)
+aws ecr create-repository --repository-name mern-hello    --region ap-south-1
+aws ecr create-repository --repository-name mern-profile  --region ap-south-1
+aws ecr create-repository --repository-name mern-frontend --region ap-south-1
+
+aws ecr get-login-password --region ap-south-1 \
+  | docker login --username AWS --password-stdin 113892881067.dkr.ecr.ap-south-1.amazonaws.com
+
+docker build -t 113892881067.dkr.ecr.ap-south-1.amazonaws.com/mern-hello:latest    ./backend/helloService
+docker build -t 113892881067.dkr.ecr.ap-south-1.amazonaws.com/mern-profile:latest  ./backend/profileService
+docker build -t 113892881067.dkr.ecr.ap-south-1.amazonaws.com/mern-frontend:latest ./frontend
+docker push 113892881067.dkr.ecr.ap-south-1.amazonaws.com/mern-hello:latest
+docker push 113892881067.dkr.ecr.ap-south-1.amazonaws.com/mern-profile:latest
+docker push 113892881067.dkr.ecr.ap-south-1.amazonaws.com/mern-frontend:latest</code></pre>
+
+  <figure class="shot">
+    <img src="docs/screenshots/04-ecr-repositories.png" alt="Amazon ECR console showing the three repositories" />
+    <figcaption>Figure 5.1 — The three images in Amazon ECR (<code>mern-hello</code>, <code>mern-profile</code>, <code>mern-frontend</code>).</figcaption>
+  </figure>
+</section>
+
+<!-- 6. JENKINS -->
+<section class="phase">
+  <div class="phase-header"><h2>6. Step 4 — Continuous Integration with Jenkins <span class="status done">DONE</span></h2><p class="phase-meta">Declarative pipeline: build → ECR → EKS.</p></div>
+  <p>A root <code>Jenkinsfile</code> defines the CI/CD pipeline. It builds the three images, logs in and
+  pushes them to ECR, then deploys to EKS with Helm.</p>
+  <pre><code>pipeline {
+  agent any
+  environment {
+    AWS_REGION   = 'ap-south-1'
+    ECR_REGISTRY = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+    IMAGE_TAG    = "${env.BUILD_NUMBER}"
+    CLUSTER_NAME = 'mern-eks'
+  }
+  stages {
+    stage('Checkout')     { steps { checkout scm } }
+    stage('Build Images') { steps { sh 'docker build ... (hello, profile, frontend)' } }
+    stage('Login to ECR') { steps { sh 'aws ecr get-login-password | docker login ...' } }
+    stage('Push Images')  { steps { sh 'docker push ... (x3)' } }
+    stage('Deploy to EKS (Helm)') {
+      steps {
+        sh '''
+          aws eks update-kubeconfig --name $CLUSTER_NAME --region $AWS_REGION
+          helm upgrade --install mern ./helm/mern-app \
+            --set imageRegistry=$ECR_REGISTRY --set tag=$IMAGE_TAG --wait
+        '''
+      }
+    }
+  }
+}</code></pre>
+  <div class="callout info">AWS credentials are supplied through the Jenkins <em>AWS Credentials</em> binding
+  (<code>credentialsId: 'aws-credentials'</code>); the account id is a Jenkins environment value. No secrets are hard-coded.</div>
+</section>
+
+<!-- 7. EKS -->
+<section class="phase">
+  <div class="phase-header"><h2>7. Step 5 — Kubernetes Deployment on EKS (Helm) <span class="status doc">PROCEDURE</span></h2><p class="phase-meta">Managed Kubernetes with a Helm chart + autoscaling.</p></div>
+
+  <h3>7.1 Create the EKS cluster</h3>
+  <pre><code>eksctl create cluster \
+  --name mern-eks --region ap-south-1 \
+  --nodegroup-name mern-nodes --node-type t3.small \
+  --nodes 2 --nodes-min 2 --nodes-max 4 --managed
+
+aws eks update-kubeconfig --name mern-eks --region ap-south-1
+kubectl get nodes</code></pre>
+
+  <h3>7.2 Helm chart layout</h3>
+  <pre><code>helm/mern-app/
+├── Chart.yaml
+├── values.yaml            # imageRegistry, tag, replicas, autoscaling, mongo.url
+└── templates/
+    ├── mongo.yaml         # in-cluster MongoDB (toggle mongo.inCluster)
+    ├── hello-service.yaml # Deployment + Service (ClusterIP) + HPA
+    ├── profile-service.yaml # Deployment + Service + Secret(MONGO_URL) + HPA
+    └── frontend.yaml      # Deployment + Service (LoadBalancer)</code></pre>
+
+  <h3>7.3 Deploy with Helm</h3>
+  <pre><code>helm upgrade --install mern ./helm/mern-app \
+  --set imageRegistry=113892881067.dkr.ecr.ap-south-1.amazonaws.com \
+  --set tag=latest
+
+kubectl get pods
+kubectl get svc            # frontend EXTERNAL-IP = LoadBalancer URL
+kubectl get hpa            # autoscalers for hello &amp; profile</code></pre>
+
+  <div class="callout info">For an external MongoDB (Atlas), deploy with
+  <code>--set mongo.inCluster=false --set mongo.url='&lt;atlas-connection-string&gt;'</code> so the value is
+  injected at deploy time and never committed to Git.</div>
+
+  <h3>7.4 Autoscaling (HorizontalPodAutoscaler)</h3>
+  <pre><code>minReplicas: 2   maxReplicas: 5   targetCPUUtilizationPercentage: 70</code></pre>
+</section>
+
+<!-- 8. MONITORING -->
+<section class="phase">
+  <div class="phase-header"><h2>8. Step 6 — Monitoring &amp; Logging <span class="status doc">PROCEDURE</span></h2><p class="phase-meta">Observability on EKS.</p></div>
+  <h3>8.1 Monitoring — Prometheus &amp; Grafana</h3>
+  <pre><code>helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+helm install monitoring prometheus-community/kube-prometheus-stack \
+  --namespace monitoring --create-namespace
+
+kubectl -n monitoring get pods
+kubectl -n monitoring port-forward svc/monitoring-grafana 3000:80  # Grafana dashboards</code></pre>
+  <h3>8.2 Logging — CloudWatch Container Insights</h3>
+  <pre><code>aws eks update-kubeconfig --name mern-eks --region ap-south-1
+# Deploy the CloudWatch agent + Fluent Bit daemonset (Container Insights):
+ClusterName=mern-eks; RegionName=ap-south-1; FluentBitHttpPort='2020'
+kubectl apply -f https://raw.githubusercontent.com/aws-samples/amazon-cloudwatch-container-insights/latest/k8s-deployment-manifest-templates/deployment-mode/daemonset/container-insights-monitoring/quickstart/cwagent-fluent-bit-quickstart.yaml</code></pre>
+  <div class="callout info">Container Insights streams pod/node metrics and application logs to CloudWatch
+  Log Groups <code>/aws/containerinsights/mern-eks/*</code> for centralized logging.</div>
+</section>
+
+<!-- 9. TROUBLESHOOTING -->
+<section class="phase">
+  <div class="phase-header"><h2>9. Troubleshooting Log</h2><p class="phase-meta">Issues hit and how they were solved.</p></div>
+  <table>
+    <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+    <tbody>
+      <tr><td>Docker engine unresponsive (<code>docker info</code> hangs)</td><td>WSL2 backend stuck on start</td><td>Stop Docker, <code>wsl --shutdown</code>, relaunch Docker Desktop.</td></tr>
+      <tr><td><code>Bind for 0.0.0.0:3001 failed: port is already allocated</code></td><td>Old containers from a previous project held 3000-3002</td><td>Removed the stale containers, then <code>docker compose up -d --force-recreate</code>.</td></tr>
+      <tr><td>Host ports not published after a failed first run</td><td>Compose reused half-created containers</td><td><code>docker compose down</code> then recreate.</td></tr>
+      <tr><td><code>SyntaxError: Unexpected token \ in JSON</code> on <code>/addUser</code></td><td>PowerShell mangled the escaped JSON body</td><td>Use single quotes: <code>-d '{"name":"..","age":25}'</code> (no backslashes).</td></tr>
+      <tr><td>Frontend calls <code>localhost:3001/3002</code></td><td>Backend URLs are hard-coded in the sample app</td><td>Works locally (browser → host). On EKS, expose via ingress or rebuild with env-based URLs.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 10. CONCLUSION -->
+<section class="phase">
+  <div class="phase-header"><h2>10. Conclusion &amp; Cleanup</h2></div>
+  <p>The MERN microservices application was containerized, verified end-to-end locally with Docker Compose
+  (including a MongoDB write/read), and its three images were published to Amazon ECR. A Jenkins pipeline and a
+  Helm chart (with autoscaling) provide the CI and Kubernetes deployment path to Amazon EKS, with Prometheus/
+  Grafana and CloudWatch Container Insights for monitoring and logging.</p>
+  <div class="callout success"><strong>Delivered:</strong> 3 Dockerfiles · docker-compose · working local stack ·
+  3 images in ECR · Jenkinsfile · Helm chart + HPA · full deployment &amp; monitoring procedures.</div>
+  <div class="callout warn"><strong>Cost cleanup:</strong> after capturing EKS evidence, delete the cluster to
+  avoid charges: <code>eksctl delete cluster --name mern-eks --region ap-south-1</code>.</div>
+  <div class="doc-footer">MERN Microservices Orchestration &amp; Scaling · Tabrez Ajaz · 09 August 2026</div>
+</section>
+
+</body>
+</html>
