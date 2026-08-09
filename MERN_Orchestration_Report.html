@@ -366,10 +366,13 @@ kubectl get hpa            # autoscalers for hello &amp; profile</code></pre>
   AWS Load Balancer (returned HTTP 200), internal service discovery resolved, and the HPAs began reporting CPU.</p>
   <pre><code>$ kubectl get pods
 NAME                               READY   STATUS    RESTARTS   AGE
-frontend-xxxx (x2)                 1/1     Running   0          38s
-hello-service-xxxx (x2)            1/1     Running   0          38s
-profile-service-xxxx (x2)          1/1     Running   0          38s
-mongo-xxxx                         1/1     Running   0          38s
+frontend-94d95d7b6-brp6w           1/1     Running   0          38s
+frontend-94d95d7b6-zjwh4           1/1     Running   0          38s
+hello-service-567f546476-47xhr     1/1     Running   0          38s
+hello-service-567f546476-dbv5t     1/1     Running   0          38s
+profile-service-5cc7fbbb59-9x2sr   1/1     Running   0          38s
+profile-service-5cc7fbbb59-p87st   1/1     Running   0          38s
+mongo-66f46656-9m68p               1/1     Running   0          38s
 
 $ kubectl get svc
 frontend        LoadBalancer   ...   a...ap-south-1.elb.amazonaws.com   80:30541/TCP
