@@ -1,0 +1,19 @@
+MERN Microservices — Orchestration and Scaling (Graded Project)
+Submitted by: Tabrez Ajaz
+
+Repository URL:
+https://github.com/TabrezAjaz/SampleMERNwithMicroservices
+
+Contents:
+- backend/helloService, backend/profileService, frontend  (Dockerfiles + .dockerignore)
+- docker-compose.yml (mongo + 3 services, local orchestration)
+- helm/mern-app/  (Helm chart: deployments, services, MongoDB, HPA autoscaling)
+- Jenkinsfile  (build -> ECR push -> EKS Helm deploy)
+- scripts/build-and-push-ecr.ps1
+- MERN_Orchestration_Report.html  (full report with embedded screenshots)
+- docs/screenshots/  (compose ps, endpoints, frontend, ECR evidence)
+
+Images pushed to Amazon ECR (ap-south-1):
+- mern-hello, mern-profile, mern-frontend
+
+Date of Submission: 09-08-2026
